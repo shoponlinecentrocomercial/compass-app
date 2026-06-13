@@ -1,404 +1,522 @@
-<!DOCTYPE html> <html lang="es"> <head> <link rel="manifest" href="manifest.json"> 
-<meta charset="UTF-8"> <meta <script> name="viewport" content="width=device-width, 
-initial-scale=1.0,
-  if ('serviceWorker' in navigator) { user-scalable=no, viewport-fit=cover"> 
-    <title>BrÃºjula Celestial</title> <style> 
-    navigator.serviceWorker.register('/sw.js'); * { margin: 0; padding: 0; 
-    box-sizing: border-box; user-select: none; /*
-  }            Evita selecciÃ³n de texto en mÃ³vil */ -webkit-tap-highlight-color:
-</script>            transparent;
-        }
-        body { background: linear-gradient(145deg, #1a3c2c 0%, #0e2a1f 100%); 
-            min-height: 100vh; display: flex; justify-content: center; 
-            align-items: center; font-family: 'Segoe UI', 'Poppins', 'Roboto', 
-            system-ui, -apple-system, 'Helvetica Neue', sans-serif; padding: 16px; 
-            margin: 0;
-        }
-        /* Tarjeta principal con efecto vidrio esmerilado */ .compass-card { 
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); 
-            border-radius: 68px; padding: 24px 20px 32px 20px; box-shadow: 0 25px 
-            45px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2); 
-            border: 1px solid rgba(255, 255, 255, 0.25); transition: all 0.2s 
-            ease;
-        }
-        /* Contenedor de la rosa y aguja */ .compass-container { position: 
-            relative; width: min(78vw, 78vh, 340px); height: min(78vw, 78vh, 
-            340px); margin: 0 auto; display: flex; justify-content: center; 
-            align-items: center;
-        }
-        canvas { position: absolute; top: 0; left: 0; width: 100% !important; 
-            height: 100% !important; border-radius: 50%; box-shadow: 0 12px 28px 
-            rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(210, 180, 140, 0.3), 0 0 0 12px 
-            rgba(0, 0, 0, 0.2); transition: box-shadow 0.2s;
-        }
-        /* Indicador de orientaciÃ³n North / Azimut */ .info-panel { margin-top: 
-            32px; text-align: center; background: rgba(0, 0, 0, 0.45); 
-            border-radius: 60px; padding: 14px 20px; backdrop-filter: blur(8px); 
-            border: 1px solid rgba(255, 215, 150, 0.5);
-        }
-        .direction-name { font-size: 2.4rem; font-weight: 700; letter-spacing: 
-            4px; color: #FFE6B3; text-shadow: 0 2px 5px #00000040; word-break: 
-            keep-all;
-        }
-        .azimuth-value { font-size: 1.2rem; font-weight: 500; color: #EEDDAa; 
-            margin-top: 6px; letter-spacing: 1px;
-        }
-        .status-msg { font-size: 0.8rem; margin-top: 12px; color: #FFD966; 
-            background: rgba(0, 0, 0, 0.5); display: inline-block; padding: 6px 
-            14px; border-radius: 50px; font-weight: 500;
-        }
-        /* BotÃ³n decorativo (reinicio de sensores o calibraciÃ³n simbÃ³lica) */ 
-        .calibrate-btn {
-            margin-top: 20px; background: rgba(255, 215, 140, 0.2); border: 1px 
-            solid rgba(255, 235, 170, 0.7); color: #FFF0C0; font-size: 0.85rem; 
-            padding: 8px 20px; border-radius: 40px; backdrop-filter: blur(8px); 
-            cursor: pointer; transition: all 0.2s; font-weight: 600; 
-            letter-spacing: 1px;
-        }
-        .calibrate-btn:active { transform: scale(0.96); background: rgba(255, 200, 
-            100, 0.4);
-        }
-        footer { margin-top: 24px; font-size: 0.65rem; text-align: center; color: 
-            #B8CFB0;
-            opacity: 0.7;
-        }
-        /* AnimaciÃ³n sutil de pulse para el canvas cuando estÃ¡ activo */ 
-        @keyframes softPulse {
-            0% { filter: drop-shadow(0 0 2px rgba(255,215,0,0.3));} 100% { filter: 
-            drop-shadow(0 0 8px rgba(255,215,0,0.6));}
-        }
-        .compass-container.active canvas { animation: softPulse 1.2s infinite 
-            alternate;
-        }
-    </style> </head> <body> <div> <div class="compass-card"> <div 
-        class="compass-container" id="compassWrapper">
-            <canvas id="compassCanvas" width="500" height="500"></canvas> </div> 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Brújula Celestial</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { transition: background 0.3s ease; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: monospace; padding: 16px; background: #030812; }
+        body.night { background: radial-gradient(ellipse at center, #030812 0%, #030405 100%); }
+        body.day { background: radial-gradient(ellipse at center, #4a8ba7 0%, #2c5f6a 100%); }
+        .compass-card { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(12px); border-radius: 50px; padding: 16px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .compass-container { position: relative; width: min(85vw, 85vh, 450px); height: min(85vw, 85vh, 450px); margin: 0 auto; }
+        canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255,215,0,0.3); }
+        .info-panel { margin-top: 16px; text-align: center; background: rgba(0, 0, 0, 0.6); border-radius: 30px; padding: 8px; }
+        .direction-name { font-size: 1.8rem; font-weight: bold; color: #FFD966; }
+        .azimuth-value { font-size: 0.8rem; color: #88ccff; }
+        .astro-info { display: flex; justify-content: center; gap: 12px; margin-top: 6px; font-size: 0.65rem; color: #aaddff; flex-wrap: wrap; }
+        .status-msg { font-size: 0.65rem; margin-top: 6px; background: #00000099; display: inline-block; padding: 3px 10px; border-radius: 20px; color: #FFD966; }
+        button, .mode-btn, .toggle-btn { margin-top: 8px; background: #ffd96633; border: 1px solid #ffd966aa; color: #FFE6B3; font-size: 0.7rem; padding: 5px 12px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        button:active { transform: scale(0.96); }
+        .active-mode { background: #ffd966aa; color: #1a2a3a; border-color: white; }
+        .toggle-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; }
+        footer { margin-top: 12px; font-size: 0.55rem; text-align: center; color: #88aacc; opacity: 0.8; }
+        .layers-panel { background: rgba(0,0,0,0.7); border-radius: 40px; padding: 8px 12px; margin: 12px 0 0; }
+        .layers-title { font-size: 0.65rem; color: #FFD966; margin-bottom: 6px; letter-spacing: 1px; }
+        .button-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+    </style>
+</head>
+<body class="night">
+<div>
+    <div class="compass-card">
+        <div class="compass-container">
+            <canvas id="compassCanvas" width="600" height="600"></canvas>
+        </div>
+
         <div class="info-panel">
-            <div class="direction-name" id="directionText">NORTE</div> <div 
-            class="azimuth-value" id="azimuthText">0.0Â°</div> <div 
-            class="status-msg" id="statusMsg">âš¡ Esperando sensor...</div>
-        </div> <div style="display: flex; justify-content: center;"> <button 
-            class="calibrate-btn" id="calibrateBtn">ðŸ§­ CALIBRAR / 
-            REINICIAR</button>
-        </div> <footer>BrÃºjula magnÃ©tica Â· apunta al norte real</footer> </div> 
-</div> <script>
+            <div class="direction-name" id="directionText">---</div>
+            <div class="azimuth-value" id="azimuthText">---</div>
+            <div class="astro-info" id="astroInfo">⭐ -- | 📍 --</div>
+            <div><span class="status-msg" id="statusMsg">🎯 Iniciando...</span></div>
+        </div>
+
+        <div class="mode-selector" style="display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
+            <button id="modeAuto" class="mode-btn active-mode">🌓 Auto</button>
+            <button id="modeDay" class="mode-btn">☀️ Día</button>
+            <button id="modeNight" class="mode-btn">🌙 Noche</button>
+        </div>
+
+        <div class="layers-panel">
+            <div class="layers-title">🎛️ CAPAS VISUALES</div>
+            <div class="toggle-group">
+                <button id="toggleStars" class="toggle-btn">⭐ Estrellas ON</button>
+                <button id="toggleConstellations" class="toggle-btn">🔗 Constelaciones ON</button>
+                <button id="togglePlanets" class="toggle-btn">🪐 Planetas ON</button>
+                <button id="toggleLabels" class="toggle-btn">🏷️ Nombres ON</button>
+                <button id="toggleSunMoon" class="toggle-btn">☀️🌙 Sol/Luna ON</button>
+            </div>
+        </div>
+
+        <div class="button-row">
+            <button id="activateBtn">🧭 ACTIVAR</button>
+            <button id="gpsBtn">📍 GPS</button>
+            <button id="debugBtn">🔍 DEBUG</button>
+        </div>
+        <footer>★ Personaliza tu cielo | Orientación astronómica ★</footer>
+    </div>
+</div>
+
+<script>
     (function(){
-        // ---------- Elementos DOM ----------
-        const canvas = document.getElementById('compassCanvas'); const ctx = 
-        canvas.getContext('2d'); const directionSpan = 
-        document.getElementById('directionText'); const azimuthSpan = 
-        document.getElementById('azimuthText'); const statusMsgDiv = 
-        document.getElementById('statusMsg'); const wrapper = 
-        document.getElementById('compassWrapper');
-        // Variables de estado
-        let currentHeading = 0; // Ã¡ngulo en grados (0 = norte) let 
-        isDeviceOrientationSupported = false; let isAbsolute = false; // si la 
-        lectura es absoluta (magnetÃ³metro) let permissionGranted = false; // para 
-        iOS 13+ (solicitar permiso) let requestPermissionInProgress = false; let 
-        animationFrameId = null;
+        const canvas = document.getElementById('compassCanvas');
+        const ctx = canvas.getContext('2d');
+        const directionSpan = document.getElementById('directionText');
+        const azimuthSpan = document.getElementById('azimuthText');
+        const statusMsgDiv = document.getElementById('statusMsg');
+        const astroInfo = document.getElementById('astroInfo');
         
-        // TamaÃ±o del canvas responsive
-        let canvasSize = 0;
+        let currentHeading = 0;
+        let latitude = 40.4168;
+        let longitude = -3.7038;
+        let isActive = false;
+        let visualMode = "auto";
         
-        // ---------- Funciones auxiliares de orientaciÃ³n (grados) ----------
-        function getCardinalDirection(degrees) {
-            // 16 direcciones principales con estÃ©tica bonita
-            const directions = [ "NORTE", "NNE", "NORESTE", "ENE", "ESTE", "ESE", 
-                "SURESTE", "SSE", "SUR", "SSO", "SUROESTE", "OSO", "OESTE", "ONO", 
-                "NOROESTE", "NNO"
-            ]; const step = 22.5; let index = Math.round(((degrees + 11.25) % 360) 
-            / step) % 16; return directions[index];
+        // Capas
+        let layers = {
+            stars: true,
+            constellations: true,
+            planets: true,
+            labels: true,
+            sunMoon: true
+        };
+        
+        try {
+            let saved = localStorage.getItem('compassLayers');
+            if(saved) {
+                let parsed = JSON.parse(saved);
+                layers = { ...layers, ...parsed };
+            }
+        } catch(e) {}
+        
+        function saveLayers() {
+            localStorage.setItem('compassLayers', JSON.stringify(layers));
         }
         
-        // Actualizar textos de interfaz
-        function updateUI(headingDeg) { let normalized = (headingDeg + 360) % 360; 
-            let cardinal = getCardinalDirection(normalized); 
-            directionSpan.innerText = cardinal; azimuthSpan.innerText = 
-            normalized.toFixed(1) + "Â°";
+        function updateLayerButtons() {
+            document.getElementById('toggleStars').innerText = layers.stars ? "⭐ Estrellas ON" : "⭐ Estrellas OFF";
+            document.getElementById('toggleConstellations').innerText = layers.constellations ? "🔗 Constelaciones ON" : "🔗 Constelaciones OFF";
+            document.getElementById('togglePlanets').innerText = layers.planets ? "🪐 Planetas ON" : "🪐 Planetas OFF";
+            document.getElementById('toggleLabels').innerText = layers.labels ? "🏷️ Nombres ON" : "🏷️ Nombres OFF";
+            document.getElementById('toggleSunMoon').innerText = layers.sunMoon ? "☀️🌙 Sol/Luna ON" : "☀️🌙 Sol/Luna OFF";
         }
         
-        // ---------- Dibujo de la brÃºjula ARTESANAL Y BONITA ----------
-        function drawCompass(headingDeg) { if (!ctx) return; const size = 
-            canvasSize; if (size === 0) return;
+        const stars = [
+            { name: "Sirio", ra: 6.75, dec: -16.72, mag: -1.46, color: "#FFFDE0" },
+            { name: "Canopus", ra: 6.40, dec: -52.70, mag: -0.72, color: "#FFF5CC" },
+            { name: "Arturo", ra: 14.27, dec: 19.18, mag: -0.05, color: "#FFDEA0" },
+            { name: "Vega", ra: 18.62, dec: 38.78, mag: 0.03, color: "#FFFFFF" },
+            { name: "Capella", ra: 5.27, dec: 45.99, mag: 0.08, color: "#FFEECC" },
+            { name: "Rigel", ra: 5.24, dec: -8.20, mag: 0.13, color: "#FFFFFF" },
+            { name: "Procyon", ra: 7.65, dec: 5.22, mag: 0.34, color: "#FFF5E0" },
+            { name: "Betelgeuse", ra: 5.92, dec: 7.41, mag: 0.42, color: "#FFCCAA" },
+            { name: "Altair", ra: 19.85, dec: 8.87, mag: 0.76, color: "#FFFFFF" },
+            { name: "Aldebaran", ra: 4.62, dec: 16.51, mag: 0.86, color: "#FFCC99" },
+            { name: "Spica", ra: 13.42, dec: -11.16, mag: 0.98, color: "#FFFFFF" },
+            { name: "Antares", ra: 16.50, dec: -26.43, mag: 1.06, color: "#FF8866" },
+            { name: "Pollux", ra: 7.77, dec: 28.03, mag: 1.16, color: "#FFEEDD" },
+            { name: "Deneb", ra: 20.70, dec: 45.28, mag: 1.25, color: "#FFFFFF" },
+            { name: "Regulus", ra: 10.13, dec: 11.97, mag: 1.36, color: "#FFFFFF" }
+        ];
+        
+        const planets = [
+            { name: "Venus", ra: 5.1, dec: 22.5, mag: -4.2, color: "#FFF5CC", tam: 10 },
+            { name: "Marte", ra: 8.3, dec: 19.8, mag: -0.5, color: "#E6735C", tam: 9 },
+            { name: "Júpiter", ra: 16.2, dec: -20.1, mag: -2.3, color: "#C9A87C", tam: 11 },
+            { name: "Saturno", ra: 19.4, dec: -22.0, mag: 0.5, color: "#E8CFA0", tam: 10 }
+        ];
+        
+        const constellations = [
+            { from: "Sirio", to: "Rigel" }, { from: "Rigel", to: "Betelgeuse" },
+            { from: "Betelgeuse", to: "Procyon" }, { from: "Arturo", to: "Spica" },
+            { from: "Vega", to: "Deneb" }, { from: "Aldebaran", to: "Betelgeuse" },
+            { from: "Dubhe", to: "Merak" }, { from: "Merak", to: "Phecda" },
+            { from: "Phecda", to: "Megrez" }, { from: "Megrez", to: "Alioth" },
+            { from: "Alioth", to: "Mizar" }, { from: "Mizar", to: "Alkaid" },
+            { from: "Polaris", to: "Kochab" }, { from: "Kochab", to: "Pherkad" },
+            { from: "Caph", to: "Schedar" }, { from: "Schedar", to: "Cih" },
+            { from: "Cih", to: "Ruchbah" }, { from: "Ruchbah", to: "Segin" },
+            { from: "Segin", to: "Caph" }
+        ];
+        
+        const constellationStars = {
+            "Dubhe": { ra: 11.03, dec: 61.75 }, "Merak": { ra: 11.01, dec: 56.38 },
+            "Phecda": { ra: 11.83, dec: 53.70 }, "Megrez": { ra: 12.22, dec: 57.03 },
+            "Alioth": { ra: 12.90, dec: 55.96 }, "Mizar": { ra: 13.23, dec: 54.93 },
+            "Alkaid": { ra: 13.78, dec: 49.31 }, "Polaris": { ra: 2.53, dec: 89.26 },
+            "Kochab": { ra: 14.98, dec: 74.15 }, "Pherkad": { ra: 15.32, dec: 71.82 },
+            "Caph": { ra: 0.16, dec: 59.15 }, "Schedar": { ra: 0.68, dec: 56.54 },
+            "Cih": { ra: 1.03, dec: 60.72 }, "Ruchbah": { ra: 1.42, dec: 60.23 },
+            "Segin": { ra: 1.83, dec: 63.67 }
+        };
+        
+        function getJulianDate(date) { return (date.getTime() / 86400000) + 2440587.5; }
+        
+        function equatorialToHorizontal(ra, dec, lat, lon, jd) {
+            const gmst = (18.697374558 + 24.06570982441908 * (jd - 2451545.0)) % 24;
+            const lst = (gmst + lon/15 + 24) % 24;
+            const ha = (lst - ra) * 15;
+            const decRad = dec*Math.PI/180, latRad=lat*Math.PI/180, haRad=ha*Math.PI/180;
+            const sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(haRad);
+            let alt = Math.asin(Math.min(1,Math.max(-1,sinAlt)));
+            const cosAz = (Math.sin(decRad) - Math.sin(alt)*Math.sin(latRad)) / (Math.cos(alt)*Math.cos(latRad));
+            let az = Math.acos(Math.min(1,Math.max(-1,cosAz)));
+            if (Math.sin(haRad) > 0) az = 2*Math.PI - az;
+            return { alt: alt*180/Math.PI, az: az*180/Math.PI };
+        }
+        
+        function getVisibleStars() {
+            const now=new Date(), jd=getJulianDate(now);
+            return stars.map(s => { let {alt,az}=equatorialToHorizontal(s.ra,s.dec,latitude,longitude,jd); return {...s,alt,az}; }).filter(s=>s.alt>-5);
+        }
+        
+        function getVisiblePlanets() {
+            const now=new Date(), jd=getJulianDate(now);
+            return planets.map(p => { let {alt,az}=equatorialToHorizontal(p.ra,p.dec,latitude,longitude,jd); return {...p,alt,az}; }).filter(p=>p.alt>-5);
+        }
+        
+        function getAllStarPositions() {
+            const now=new Date(), jd=getJulianDate(now);
+            let all = {};
+            for(let s of stars) {
+                let {alt,az}=equatorialToHorizontal(s.ra,s.dec,latitude,longitude,jd);
+                if(alt>-5) all[s.name] = { alt, az };
+            }
+            for(let [name, data] of Object.entries(constellationStars)) {
+                let {alt,az}=equatorialToHorizontal(data.ra,data.dec,latitude,longitude,jd);
+                if(alt>-5) all[name] = { alt, az };
+            }
+            return all;
+        }
+        
+        function drawConstellationLines(cx, cy, radius, heading) {
+            if(!layers.constellations) return;
+            let starPos = getAllStarPositions();
+            for(let conn of constellations) {
+                let a=starPos[conn.from], b=starPos[conn.to];
+                if(a && b) {
+                    let angleA=(a.az-heading+360)%360, angleB=(b.az-heading+360)%360;
+                    let radA=angleA*Math.PI/180, radB=angleB*Math.PI/180;
+                    let distA=radius*(0.88-(a.alt+90)/180), distB=radius*(0.88-(b.alt+90)/180);
+                    let xA=cx+Math.sin(radA)*distA, yA=cy-Math.cos(radA)*distA;
+                    let xB=cx+Math.sin(radB)*distB, yB=cy-Math.cos(radB)*distB;
+                    ctx.beginPath(); ctx.moveTo(xA,yA); ctx.lineTo(xB,yB);
+                    ctx.strokeStyle="#88aaff99"; ctx.lineWidth=1.2; ctx.stroke();
+                }
+            }
+        }
+        
+        function getMoonPhase() {
+            const now=new Date();
+            const dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
+            const phase = (dayOfYear % 29.53) / 29.53;
+            if(phase < 0.1) return "🌑 Nueva";
+            if(phase < 0.25) return "🌒 Creciente";
+            if(phase < 0.4) return "🌓 Cuarto creciente";
+            if(phase < 0.6) return "🌔 Gibosa creciente";
+            if(phase < 0.75) return "🌕 Llena";
+            if(phase < 0.9) return "🌖 Gibosa menguante";
+            return "🌘 Menguante";
+        }
+        
+        function getSunMoon() {
+            const now=new Date();
+            let hourLocal = (now.getUTCHours() + (longitude/15) + 24)%24;
+            let sunAz = (180 + 180 * Math.sin((hourLocal-12)*Math.PI/12)) % 360;
+            let dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
+            let moonAz = (sunAz + 180 + 30 * Math.sin(dayOfYear*Math.PI/29.53)) % 360;
+            let isDayReal = (hourLocal > 6 && hourLocal < 19);
+            return { sunAz, moonAz, isDayReal };
+        }
+        
+        function isNightMode() {
+            if(visualMode === "night") return true;
+            if(visualMode === "day") return false;
+            return getSunMoon().isDayReal === false;
+        }
+        
+        function drawStarsAndPlanets(cx, cy, radius, heading) {
+            let starsVis = layers.stars ? getVisibleStars() : [];
+            let planetsVis = layers.planets ? getVisiblePlanets() : [];
             
-            // Ajustar resoluciÃ³n del canvas al tamaÃ±o real (retina friendly)
-            canvas.width = size; canvas.height = size;
+            if(layers.constellations) drawConstellationLines(cx, cy, radius, heading);
             
-            const centerX = size / 2; const centerY = size / 2; const radius = 
-            size * 0.45; // margen para decoraciÃ³n exterior
+            for(let s of starsVis) {
+                let angle = (s.az-heading+360)%360, rad=angle*Math.PI/180;
+                let dist = radius*(0.88-(s.alt+90)/180);
+                let x=cx+Math.sin(rad)*dist, y=cy-Math.cos(rad)*dist;
+                let size=Math.min(6,Math.max(2,3.5-s.mag));
+                ctx.beginPath(); ctx.arc(x,y,size,0,2*Math.PI);
+                ctx.fillStyle=s.color || "rgba(255,240,200,0.8)"; ctx.fill();
+                if(layers.labels) {
+                    ctx.font=`bold ${Math.floor(size*3.5)}px monospace`;
+                    ctx.fillStyle="#FFFDE0"; ctx.fillText(s.name, x+10, y-5);
+                }
+            }
             
+            for(let p of planetsVis) {
+                let angle=(p.az-heading+360)%360, rad=angle*Math.PI/180;
+                let dist=radius*(0.88-(p.alt+90)/180);
+                let x=cx+Math.sin(rad)*dist, y=cy-Math.cos(rad)*dist;
+                ctx.beginPath(); ctx.arc(x,y,p.tam,0,2*Math.PI);
+                ctx.fillStyle=p.color; ctx.fill();
+                ctx.beginPath(); ctx.arc(x,y,p.tam-2,0,2*Math.PI);
+                ctx.fillStyle="rgba(255,255,200,0.3)"; ctx.fill();
+                if(layers.labels) {
+                    ctx.font="bold 10px monospace"; ctx.fillStyle="#FFEECC";
+                    ctx.fillText(p.name, x+12, y-6);
+                }
+            }
+            
+            let phase = getMoonPhase();
+            astroInfo.innerHTML = `⭐ ${starsVis.length} | 🪐 ${planetsVis.length} | ${phase} | 📍 ${latitude.toFixed(1)}°,${longitude.toFixed(1)}°`;
+        }
+        
+        function drawCompass() {
+            if(!ctx) return;
+            let size = canvas.width;
+            if(size === 0) return;
+            let cx = size/2, cy = size/2;
+            let radius = size * 0.4;
             ctx.clearRect(0, 0, size, size);
             
-            // --- Fondo circular con degradado metÃ¡lico/brillante ---
-            const grad = ctx.createLinearGradient(0, 0, size, size); 
-            grad.addColorStop(0, '#F9F3E0'); grad.addColorStop(0.5, '#EBE0C5'); 
-            grad.addColorStop(1, '#D8CAA8'); ctx.beginPath(); ctx.arc(centerX, 
-            centerY, radius + 4, 0, 2 * Math.PI); ctx.fillStyle = grad; 
-            ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = '#BFAA7A'; 
-            ctx.lineWidth = 2; ctx.stroke();
+            let { sunAz, moonAz, isDayReal } = getSunMoon();
+            let isNight = isNightMode();
             
-            // Anillo exterior decorativo (puntos cardinales pequeÃ±os)
-            ctx.beginPath(); ctx.arc(centerX, centerY, radius + 2, 0, 2 * 
-            Math.PI); ctx.strokeStyle = '#C4A86B'; ctx.lineWidth = 1.8; 
-            ctx.stroke();
-            
-            // --- Escala circular (graduaciÃ³n 0Â° a 360Â°, invertir por la 
-            // rotaciÃ³n) --- Pero la brÃºjula debe girar, asÃ­ que primero 
-            // guardamos y rotamos el contexto
-            ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(-headingDeg * 
-            Math.PI / 180); // RotaciÃ³n inversa para que la aguja fija apunte al 
-            norte
-            // Dibujamos anillos graduados y marcas de direcciÃ³n
-            
-            // CÃ­rculo principal interno
-            ctx.beginPath(); ctx.arc(0, 0, radius-6, 0, 2 * Math.PI); 
-            ctx.fillStyle = '#FEF7E6'; ctx.fill(); ctx.strokeStyle = '#C2A15B'; 
-            ctx.lineWidth = 1.2; ctx.stroke();
-            
-            // Dibujar marcas de grados y nÃºmeros (cada 30 grados)
-            const markRadius = radius - 12; const textRadius = radius - 28; for 
-            (let ang = 0; ang < 360; ang += 10) {
-                let rad = ang * Math.PI / 180; let x1 = Math.sin(rad) * 
-                (markRadius - (ang % 30 === 0 ? 8 : 3)); let y1 = -Math.cos(rad) * 
-                (markRadius - (ang % 30 === 0 ? 8 : 3)); let x2 = Math.sin(rad) * 
-                markRadius; let y2 = -Math.cos(rad) * markRadius; ctx.beginPath(); 
-                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineWidth = (ang % 30 
-                === 0) ? 2.2 : 1; ctx.strokeStyle = (ang % 90 === 0) ? '#846C3E' : 
-                '#A58E58'; ctx.stroke();
-            }
-            
-            // Dibujar nÃºmeros cardinales (N, E, S, O) y principales
-            ctx.font = `bold ${Math.floor(size * 0.065)}px "Segoe UI", "Poppins"`; 
-            ctx.fillStyle = '#4A3724'; ctx.shadowBlur = 0; const cardinalPoints = 
-            [
-                { angle: 0, label: "N" }, { angle: 90, label: "E" }, { angle: 180, 
-                label: "S" }, { angle: 270, label: "O" }
-            ]; for (let cp of cardinalPoints) { let rad = cp.angle * Math.PI / 
-                180; let x = Math.sin(rad) * textRadius; let y = -Math.cos(rad) * 
-                textRadius; ctx.fillStyle = (cp.label === "N") ? "#D6402B" : 
-                "#3C2E22"; ctx.font = `bold ${Math.floor(size * 0.078)}px "Segoe 
-                UI", "Poppins"`; ctx.shadowBlur = 2; ctx.shadowColor = 
-                "rgba(0,0,0,0.2)"; ctx.fillText(cp.label, x - 12, y + 8); 
-                ctx.fillStyle = "#5F4C30"; ctx.font = `${Math.floor(size * 
-                0.045)}px "Segoe UI"`; if (cp.label === "N") {
-                    ctx.fillStyle = "#C7361E";
-                }
-            }
-            
-            // Agregar marcas intermedias (NE, SE, SO, NO)
-            ctx.font = `${Math.floor(size * 0.05)}px "Segoe UI"`; ctx.fillStyle = 
-            '#5E4C31'; const intercardinal = [
-                { angle: 45, label: "NE" }, { angle: 135, label: "SE" }, { angle: 
-                225, label: "SO" }, { angle: 315, label: "NO" }
-            ]; for (let ic of intercardinal) { let rad = ic.angle * Math.PI / 180; 
-                let x = Math.sin(rad) * (textRadius - 5); let y = -Math.cos(rad) * 
-                (textRadius - 5); ctx.fillStyle = '#4C3A28'; 
-                ctx.fillText(ic.label, x - 8, y + 5);
-            }
-            
-            // Restaurar rotaciÃ³n para la aguja fija ahora (no rotamos la aguja, 
-            // la aguja estÃ¡ fija al norte)
-            ctx.restore();
-            
-            // --- Aguja magnÃ©tica fija (NORTE en rojo, SUR en gris) ---
-            ctx.save(); ctx.translate(centerX, centerY);
-            // La aguja se dibuja sin rotaciÃ³n adicional porque el canvas ya 
-            // rotÃ³ previamente para los nÃºmeros. Pero la lÃ³gica correcta: el 
-            // fondo girÃ³ con heading, la aguja debe quedar alineada con el norte 
-            // real (posiciÃ³n fija apuntando arriba) En nuestro dibujo hemos 
-            // rotado todo el sistema de marcas, entonces la aguja la pintamos 
-            // fija apuntando arriba 0Â° (Norte) Pero para simular una brÃºjula 
-            // real, la aguja debe seÃ±alar el norte magnÃ©tico en relaciÃ³n al 
-            // usuario. CORRECCIÃ“N: al rotar las marcas con -heading, el norte 
-            // del mapa se alinea con la direcciÃ³n del dispositivo. La aguja debe 
-            // apuntar hacia arriba (sentido del norte real del mapa) -> entonces 
-            // dibujamos aguja roja fija hacia arriba. Excelente, esto es 
-            // consistente.
-            
-            // Aguja NORTE (roja)
-            ctx.beginPath(); ctx.moveTo(0, -radius + 20); ctx.lineTo(-12, -18); 
-            ctx.lineTo(-6, -18); ctx.lineTo(-6, radius - 36); ctx.lineTo(6, radius 
-            - 36); ctx.lineTo(6, -18); ctx.lineTo(12, -18); ctx.fillStyle = 
-            '#E34234'; ctx.shadowBlur = 4; ctx.fill(); ctx.fillStyle = '#B22222'; 
-            ctx.beginPath(); ctx.moveTo(0, -radius + 18); ctx.lineTo(-6, -12); 
-            ctx.lineTo(6, -12); ctx.fill();
-            
-            // Aguja SUR (blanco/gris)
-            ctx.beginPath(); ctx.moveTo(0, radius - 28); ctx.lineTo(-8, 15); 
-            ctx.lineTo(-4, 15); ctx.lineTo(-4, 22); ctx.lineTo(4, 22); 
-            ctx.lineTo(4, 15); ctx.lineTo(8, 15); ctx.fillStyle = '#C0C0C0'; 
-            ctx.fill(); ctx.fillStyle = '#A0A0A0'; ctx.beginPath(); ctx.moveTo(0, 
-            radius - 26); ctx.lineTo(-4, 12); ctx.lineTo(4, 12); ctx.fill();
-            
-            // Centro decorativo (tornillo)
-            ctx.beginPath(); ctx.arc(0, 0, 12, 0, 2 * Math.PI); ctx.fillStyle = 
-            '#DFC98A'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 7, 0, 2 * 
-            Math.PI); ctx.fillStyle = '#B88B4A'; ctx.fill(); ctx.beginPath(); 
-            ctx.arc(0, 0, 3, 0, 2 * Math.PI); ctx.fillStyle = '#F5DEB3'; 
+            let grad = ctx.createLinearGradient(0, 0, size, size);
+            if(isNight) grad.addColorStop(0, "#030812"), grad.addColorStop(1, "#111a2a");
+            else grad.addColorStop(0, "#87CEEB"), grad.addColorStop(1, "#FFD700");
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius+8, 0, 2*Math.PI);
+            ctx.fillStyle = grad;
             ctx.fill();
             
+            if(isNight) {
+                drawStarsAndPlanets(cx, cy, radius, currentHeading);
+            } else {
+                astroInfo.innerHTML = `☀️ Sol: ${Math.round(sunAz)}° | 🌙 Luna: ${Math.round(moonAz)}° | 📍 ${latitude.toFixed(1)}°,${longitude.toFixed(1)}°`;
+            }
+            
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-currentHeading * Math.PI/180);
+            
+            for(let ang=0; ang<360; ang+=15) {
+                let rad = ang * Math.PI/180;
+                let x1 = Math.sin(rad)*(radius-3), y1 = -Math.cos(rad)*(radius-3);
+                let x2 = Math.sin(rad)*(radius+5), y2 = -Math.cos(rad)*(radius+5);
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = isNight ? "#88aaff" : "#FFE6B3";
+                ctx.stroke();
+            }
+            
+            ctx.font = `bold ${Math.floor(size*0.055)}px monospace`;
+            ctx.fillStyle = "#D6402B";
+            ctx.fillText("N", -12, -radius+16);
+            ctx.fillStyle = isNight ? "#88ccff" : "#2a5f6a";
+            ctx.fillText("S", -10, radius+8);
+            ctx.fillText("E", radius-18, 8);
+            ctx.fillText("O", -radius+8, 8);
             ctx.restore();
             
-            // Borde final decorativo tipo joya
-            ctx.beginPath(); ctx.arc(centerX, centerY, radius + 4, 0, 2 * 
-            Math.PI); ctx.lineWidth = 1.5; ctx.strokeStyle = '#FCE1A8'; 
+            if(layers.sunMoon) {
+                let sunAngle = (sunAz - currentHeading + 360) % 360;
+                let radSun = sunAngle * Math.PI/180;
+                let xSun = cx + Math.sin(radSun)*(radius+16);
+                let ySun = cy - Math.cos(radSun)*(radius+16);
+                ctx.beginPath();
+                ctx.arc(xSun, ySun, 14, 0, 2*Math.PI);
+                ctx.fillStyle = "#FFD700";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(xSun, ySun, 10, 0, 2*Math.PI);
+                ctx.fillStyle = "#FFAA00";
+                ctx.fill();
+                
+                let moonAngle = (moonAz - currentHeading + 360) % 360;
+                let radMoon = moonAngle * Math.PI/180;
+                let xMoon = cx + Math.sin(radMoon)*(radius+16);
+                let yMoon = cy - Math.cos(radMoon)*(radius+16);
+                ctx.beginPath();
+                ctx.arc(xMoon, yMoon, 12, 0, 2*Math.PI);
+                ctx.fillStyle = "#DDDDFF";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(xMoon-3, yMoon-2, 4, 0, 2*Math.PI);
+                ctx.fillStyle = "#BBBBEE";
+                ctx.fill();
+            }
+            
+            // Aguja norte
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - radius + 20);
+            ctx.lineTo(cx - 10, cy - 18);
+            ctx.lineTo(cx - 4, cy - 18);
+            ctx.lineTo(cx - 4, cy + radius - 38);
+            ctx.lineTo(cx + 4, cy + radius - 38);
+            ctx.lineTo(cx + 4, cy - 18);
+            ctx.lineTo(cx + 10, cy - 18);
+            ctx.closePath();
+            ctx.fillStyle = "rgba(229, 92, 60, 0.6)";
+            ctx.fill();
+            ctx.strokeStyle = "#E55C3C";
+            ctx.lineWidth = 1.5;
             ctx.stroke();
-        }
-        
-        // FunciÃ³n para redimensionar y redibujar
-        function resizeAndDraw() { const container = 
-            document.querySelector('.compass-container'); const containerRect = 
-            container.getBoundingClientRect(); canvasSize = 
-            Math.min(containerRect.width, containerRect.height); 
-            canvas.style.width = `${canvasSize}px`; canvas.style.height = 
-            `${canvasSize}px`; canvas.width = canvasSize; canvas.height = 
-            canvasSize; drawCompass(currentHeading);
-        }
-        
-        // Manejar eventos de orientaciÃ³n (deviceorientation absoluto)
-        function handleOrientation(event) { if (!isDeviceOrientationSupported) 
-            return;
-            // Verificar heading (alpha + webkitCompassHeading)
-            let heading = null; if (event.webkitCompassHeading !== undefined) {
-                // iOS y Safari: Ã¡ngulo del norte magnÃ©tico (0-360)
-                heading = event.webkitCompassHeading; isAbsolute = true;
-            } else if (event.alpha !== null && event.alpha !== undefined) {
-                // Alpha: rotaciÃ³n alrededor del eje Z (0 = norte) Si 
-                // event.absolute es true, alpha es relativo al norte magnÃ©tico
-                if (event.absolute === true) { heading = event.alpha;
-                } else {
-                    // En algunos dispositivos, la ausencia de magnetÃ³metro da 
-                    // alpha no absoluto, pero puede funcionar
-                    heading = event.alpha;
-                }
-            }
             
-            if (heading !== null && !isNaN(heading)) { currentHeading = heading % 
-                360; updateUI(currentHeading); drawCompass(currentHeading); if 
-                (statusMsgDiv.innerText.includes("Esperando") || 
-                statusMsgDiv.innerText.includes("permiso")) {
-                    statusMsgDiv.innerHTML = "ðŸ§­ BrÃºjula activa Â· leyendo 
-                    orientaciÃ³n"; wrapper.classList.add("active");
-                }
-            } else {
-                statusMsgDiv.innerHTML = "âš ï¸ Datos de orientaciÃ³n no 
-                disponibles";
-            }
-        }
-        
-        // Solicitud para iOS 13+ (permiso)
-        function requestIOSPermission() { if (typeof DeviceOrientationEvent !== 
-            'undefined' && typeof DeviceOrientationEvent.requestPermission === 
-            'function') {
-                if (requestPermissionInProgress) return; 
-                requestPermissionInProgress = true; statusMsgDiv.innerHTML = "ðŸ”„ 
-                Toca para habilitar brÃºjula";
-                // Mostrar modal de interacciÃ³n del usuario (el botÃ³n lo harÃ¡)
-                return true;
-            } else {
-                // Android y otros: ya tenemos permiso implÃ­cito
-                startOrientationListener(); return false;
-            }
-        }
-        
-        function startOrientationListener() { if (isDeviceOrientationSupported) 
-            return; window.addEventListener('deviceorientation', 
-            handleOrientation); isDeviceOrientationSupported = true; 
-            statusMsgDiv.innerHTML = "ðŸŒ BrÃºjula activa Â· esperando 
-            seÃ±al...";
-        }
-        
-        // InicializaciÃ³n completa
-        function initCompass() { resizeAndDraw(); 
-            window.addEventListener('resize', () => {
-                resizeAndDraw();
-            });
+            // Aguja sur
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + radius - 32);
+            ctx.lineTo(cx - 6, cy + 10);
+            ctx.lineTo(cx - 2, cy + 10);
+            ctx.lineTo(cx - 2, cy + 16);
+            ctx.lineTo(cx + 2, cy + 16);
+            ctx.lineTo(cx + 2, cy + 10);
+            ctx.lineTo(cx + 6, cy + 10);
+            ctx.closePath();
+            ctx.fillStyle = "rgba(176, 176, 176, 0.6)";
+            ctx.fill();
+            ctx.strokeStyle = "#B0B0B0";
+            ctx.lineWidth = 1;
+            ctx.stroke();
             
-            // Detectar compatibilidad
-            if (window.DeviceOrientationEvent) { if (typeof 
-                DeviceOrientationEvent.requestPermission === 'function') {
-                    // iOS: mostramos botÃ³n de solicitud de permiso real
-                    statusMsgDiv.innerHTML = "ðŸ“± iOS detectado Â· toque CALIBRAR 
-                    para activar brÃºjula"; wrapper.classList.remove("active");
-                } else {
-                    startOrientationListener();
-                }
-            } else {
-                statusMsgDiv.innerHTML = "âŒ Tu navegador no soporta 
-                orientaciÃ³n"; directionSpan.innerText = "SENSOR"; 
-                azimuthSpan.innerText = "--Â°";
+            // Centro
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, 2*Math.PI);
+            ctx.fillStyle = "rgba(232, 207, 160, 0.5)";
+            ctx.fill();
+            
+            document.body.className = isNight ? "night" : "day";
+        }
+        
+        function handleOrientation(e) {
+            if(!isActive) return;
+            let heading = e.webkitCompassHeading || e.alpha;
+            if(heading !== null && !isNaN(heading)) {
+                currentHeading = (360 - heading) % 360;
+                let dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+                directionSpan.innerText = dirs[Math.round(((currentHeading+11.25)%360)/22.5)%16];
+                azimuthSpan.innerText = currentHeading.toFixed(1)+"°";
+                drawCompass();
             }
         }
         
-        // BotÃ³n de calibraciÃ³n / solicitud de permiso (iOS)
-        const calibrateBtn = document.getElementById('calibrateBtn'); async 
-        function handleCalibrateOrRequest() {
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof 
-            DeviceOrientationEvent.requestPermission === 'function') {
-                try { const permissionState = await 
-                    DeviceOrientationEvent.requestPermission(); if 
-                    (permissionState === 'granted') {
-                        window.addEventListener('deviceorientation', 
-                        handleOrientation); isDeviceOrientationSupported = true; 
-                        statusMsgDiv.innerHTML = "âœ¨ Permiso concedido Â· 
-                        brÃºjula lista"; wrapper.classList.add("active");
-                        // Inmediatamente ver si hay heading inicial
-                        setTimeout(() => { if (currentHeading === 0 && 
-                            !window.lastHeadingReceived) {
-                                statusMsgDiv.innerHTML = "ðŸ”„ Esperando datos 
-                                magnÃ©ticos...";
-                            }
-                        }, 300);
-                    } else {
-                        statusMsgDiv.innerHTML = "ðŸ”’ Permiso denegado, no se 
-                        puede acceder a la brÃºjula";
+        function getLocation() {
+            statusMsgDiv.innerHTML = "📍 GPS...";
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => { 
+                        latitude = pos.coords.latitude; 
+                        longitude = pos.coords.longitude; 
+                        statusMsgDiv.innerHTML = "✅ GPS OK"; 
+                        drawCompass(); 
+                    },
+                    () => { 
+                        statusMsgDiv.innerHTML = "⚠️ GPS fail (demo)"; 
+                        drawCompass(); 
                     }
-                } catch (err) {
-                    statusMsgDiv.innerHTML = "âš ï¸ Error al solicitar permiso"; 
-                    console.warn(err);
-                }
+                );
             } else {
-                // En Android o PC solo reiniciamos visualmente, o forzamos 
-                // re-solicitud?
-                if (!isDeviceOrientationSupported) { startOrientationListener();
-                } else {
-                    // simulamos efecto de recalibraciÃ³n visual
-                    statusMsgDiv.innerHTML = "ðŸŒ€ Recalibrando... mueve el 
-                    dispositivo en 8"; drawCompass(currentHeading); setTimeout(() 
-                    => {
-                        statusMsgDiv.innerHTML = "ðŸ§­ BrÃºjula estable";
-                    }, 1000);
+                statusMsgDiv.innerHTML = "❌ GPS no soportado";
+            }
+        }
+        
+        function debugInfo() {
+            let starsV = getVisibleStars();
+            let planetsV = getVisiblePlanets();
+            let { sunAz, moonAz } = getSunMoon();
+            alert(`Estrellas: ${starsV.length}\nPlanetas: ${planetsV.length}\nSol: ${Math.round(sunAz)}°\nLuna: ${Math.round(moonAz)}°\nGPS: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}\nRumbo: ${currentHeading.toFixed(0)}°\nModo: ${visualMode}`);
+        }
+        
+        function setVisualMode(mode) {
+            visualMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active-mode'));
+            if(mode === 'auto') document.getElementById('modeAuto').classList.add('active-mode');
+            if(mode === 'day') document.getElementById('modeDay').classList.add('active-mode');
+            if(mode === 'night') document.getElementById('modeNight').classList.add('active-mode');
+            drawCompass();
+            statusMsgDiv.innerHTML = `🎨 Modo visual: ${mode.toUpperCase()}`;
+        }
+        
+        function toggleLayer(layer) {
+            layers[layer] = !layers[layer];
+            saveLayers();
+            updateLayerButtons();
+            drawCompass();
+            statusMsgDiv.innerHTML = `🔄 ${layer}: ${layers[layer] ? "activada" : "desactivada"}`;
+        }
+        
+        function activateCompass() {
+            statusMsgDiv.innerHTML = "🔄 Activando...";
+            if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+                DeviceOrientationEvent.requestPermission()
+                    .then(perm => {
+                        if(perm === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                            isActive = true;
+                            statusMsgDiv.innerHTML = "✅ Activo";
+                        } else {
+                            statusMsgDiv.innerHTML = "❌ Permiso denegado";
+                        }
+                    })
+                    .catch(() => statusMsgDiv.innerHTML = "⚠️ Error permiso");
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation);
+                isActive = true;
+                statusMsgDiv.innerHTML = "✅ Activo";
+            }
+            getLocation();
+        }
+        
+        function resizeCanvas() {
+            let container = document.querySelector('.compass-container');
+            if(container) {
+                let sz = Math.min(container.clientWidth, container.clientHeight);
+                if(sz > 0) {
+                    canvas.width = sz;
+                    canvas.height = sz;
+                    drawCompass();
                 }
             }
         }
         
-        calibrateBtn.addEventListener('click', (e) => { e.preventDefault(); 
-            handleCalibrateOrRequest();
-        });
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', function() { setTimeout(resizeCanvas, 100); });
         
-        // Fallback para asegurar que el canvas se dibuje periÃ³dicamente incluso 
-        // sin sensor
-        function fallbackAnimation() { if (!isDeviceOrientationSupported && 
-            currentHeading === 0) {
-                // Si no hay movimiento, mostrar al menos la brÃºjula estÃ¡tica 
-                // sin movimiento
-                drawCompass(0); updateUI(0);
-            } else {
-                drawCompass(currentHeading);
-            }
-            requestAnimationFrame(fallbackAnimation);
+        document.getElementById('activateBtn').addEventListener('click', activateCompass);
+        document.getElementById('gpsBtn').addEventListener('click', getLocation);
+        document.getElementById('debugBtn').addEventListener('click', debugInfo);
+        document.getElementById('modeAuto').addEventListener('click', () => setVisualMode('auto'));
+        document.getElementById('modeDay').addEventListener('click', () => setVisualMode('day'));
+        document.getElementById('modeNight').addEventListener('click', () => setVisualMode('night'));
+        
+        document.getElementById('toggleStars').addEventListener('click', () => toggleLayer('stars'));
+        document.getElementById('toggleConstellations').addEventListener('click', () => toggleLayer('constellations'));
+        document.getElementById('togglePlanets').addEventListener('click', () => toggleLayer('planets'));
+        document.getElementById('toggleLabels').addEventListener('click', () => toggleLayer('labels'));
+        document.getElementById('toggleSunMoon').addEventListener('click', () => toggleLayer('sunMoon'));
+        
+        updateLayerButtons();
+        resizeCanvas();
+        drawCompass();
+        
+        if(!(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission)) {
+            setTimeout(activateCompass, 800);
         }
         
-        // Iniciar todo
-        initCompass();
-        // Aseguramos animaciÃ³n continua y responsive
-        let resizeObserver = new ResizeObserver(() => resizeAndDraw()); 
-        resizeObserver.observe(document.querySelector('.compass-container')); 
-        fallbackAnimation();
-        
-        // Si el usuario sale de la pestaÃ±a no hay problema, pero se reanuda
-        window.addEventListener('load', () => { resizeAndDraw();
-        });
+        setInterval(() => drawCompass(), 30000);
     })();
-</script> </body>
+</script>
+</body>
 </html>
