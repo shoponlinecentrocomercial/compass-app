@@ -26,6 +26,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
+    - name: Clean Gradle cache (fix for BouncyCastle issue)
+      run: |
+        rm -rf ~/.gradle/caches/jars-9/
+        rm -rf ~/.gradle/caches/modules-2/files-2.1/org.bouncycastle/
+    
     - name: Install Capacitor
       run: |
         npm install @capacitor/core @capacitor/cli @capacitor/android
@@ -37,7 +42,7 @@ jobs:
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon --refresh-dependencies
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
