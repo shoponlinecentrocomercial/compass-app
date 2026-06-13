@@ -518,5 +518,20 @@
         setInterval(() => drawCompass(), 30000);
     })();
 </script>
+<script src="capacitor.js"></script> <!-- Capacitor lo inyectará solo -->
+<script>
+  document.addEventListener('deviceready', async () => {
+    const { AdMob } = capacitorExports.Plugins; // Así accedes al plugin en JS puro
+
+    await AdMob.initialize();
+
+    // Mostrar banner de prueba (luego pones el tuyo)
+    await AdMob.showBanner({
+      adId: 'ca-app-pub-3940256099942544/6300978111', 
+      position: 'BOTTOM_CENTER',
+      margin: 0
+    });
+  });
+</script>
 </body>
 </html>
