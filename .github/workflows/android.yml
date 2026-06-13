@@ -23,13 +23,26 @@ jobs:
           npm install
           npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/admob
 
-      - name: Create www folder if not exists
+      - name: Create www folder
         run: mkdir -p www
 
       - name: Capacitor Sync
         run: |
           npx cap add android || true
           npx cap sync android
+
+      # --- PASO CRUCIAL PARA REPARAR EL ERROR DE ZIPALIGN ---
+      - name: Fix Zipalign Path
+        run: |
+          # Buscar la carpeta de build-tools instalada (ej. 34.0.0) y añadirla al PATH
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          echo "$BUILD_TOOLS_DIR" >> $GITHUB_PATH
+          echo "Usando build-tools en: $BUILD_TOOLS_DIR"
+
+      - name: Add AdMob ID to Manifest
+        run: |
+          # Reemplaza con tu ID real de AdMob en el futuro
+          sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"\/>' android/app/src/main/AndroidManifest.xml
 
       - name: Build with Gradle
         run: |
@@ -38,7 +51,7 @@ jobs:
           ./gradlew assembleRelease
 
       - name: Sign APK
-        id: sign_app  # <--- Este es el ID importante
+        id: sign_app
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: android/app/build/outputs/apk/release
@@ -51,5 +64,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          # Aquí usamos el ID 'sign_app' que definimos arriba
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
