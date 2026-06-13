@@ -7,10 +7,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Usar una versión estable
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -21,31 +22,36 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'  # Actualizado a Node 20
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Clean Gradle cache (fix for BouncyCastle issue)
-      run: |
-        rm -rf ~/.gradle/caches/jars-9/
-        rm -rf ~/.gradle/caches/modules-2/files-2.1/org.bouncycastle/
-    
     - name: Install Capacitor
       run: |
-        npm install @capacitor/core @capacitor/cli @capacitor/android
+        npm install -g @capacitor/cli
+        npm install @capacitor/core @capacitor/android
         npx cap init "Brújula Celestial" "com.compass.app" --web-dir=www
         npx cap add android
         npx cap sync android
+    
+    - name: List files for debugging
+      run: |
+        ls -la
+        ls -la www/
+        ls -la android/
     
     - name: Build APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon --refresh-dependencies
+        ./gradlew assembleDebug --stacktrace
+      env:
+        JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Brújula-APK
         path: android/app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
