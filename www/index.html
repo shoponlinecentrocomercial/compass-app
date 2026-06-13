@@ -1,0 +1,404 @@
+<!DOCTYPE html> <html lang="es"> <head> <link rel="manifest" href="manifest.json"> 
+<meta charset="UTF-8"> <meta <script> name="viewport" content="width=device-width, 
+initial-scale=1.0,
+  if ('serviceWorker' in navigator) { user-scalable=no, viewport-fit=cover"> 
+    <title>BrÃºjula Celestial</title> <style> 
+    navigator.serviceWorker.register('/sw.js'); * { margin: 0; padding: 0; 
+    box-sizing: border-box; user-select: none; /*
+  }            Evita selecciÃ³n de texto en mÃ³vil */ -webkit-tap-highlight-color:
+</script>            transparent;
+        }
+        body { background: linear-gradient(145deg, #1a3c2c 0%, #0e2a1f 100%); 
+            min-height: 100vh; display: flex; justify-content: center; 
+            align-items: center; font-family: 'Segoe UI', 'Poppins', 'Roboto', 
+            system-ui, -apple-system, 'Helvetica Neue', sans-serif; padding: 16px; 
+            margin: 0;
+        }
+        /* Tarjeta principal con efecto vidrio esmerilado */ .compass-card { 
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); 
+            border-radius: 68px; padding: 24px 20px 32px 20px; box-shadow: 0 25px 
+            45px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2); 
+            border: 1px solid rgba(255, 255, 255, 0.25); transition: all 0.2s 
+            ease;
+        }
+        /* Contenedor de la rosa y aguja */ .compass-container { position: 
+            relative; width: min(78vw, 78vh, 340px); height: min(78vw, 78vh, 
+            340px); margin: 0 auto; display: flex; justify-content: center; 
+            align-items: center;
+        }
+        canvas { position: absolute; top: 0; left: 0; width: 100% !important; 
+            height: 100% !important; border-radius: 50%; box-shadow: 0 12px 28px 
+            rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(210, 180, 140, 0.3), 0 0 0 12px 
+            rgba(0, 0, 0, 0.2); transition: box-shadow 0.2s;
+        }
+        /* Indicador de orientaciÃ³n North / Azimut */ .info-panel { margin-top: 
+            32px; text-align: center; background: rgba(0, 0, 0, 0.45); 
+            border-radius: 60px; padding: 14px 20px; backdrop-filter: blur(8px); 
+            border: 1px solid rgba(255, 215, 150, 0.5);
+        }
+        .direction-name { font-size: 2.4rem; font-weight: 700; letter-spacing: 
+            4px; color: #FFE6B3; text-shadow: 0 2px 5px #00000040; word-break: 
+            keep-all;
+        }
+        .azimuth-value { font-size: 1.2rem; font-weight: 500; color: #EEDDAa; 
+            margin-top: 6px; letter-spacing: 1px;
+        }
+        .status-msg { font-size: 0.8rem; margin-top: 12px; color: #FFD966; 
+            background: rgba(0, 0, 0, 0.5); display: inline-block; padding: 6px 
+            14px; border-radius: 50px; font-weight: 500;
+        }
+        /* BotÃ³n decorativo (reinicio de sensores o calibraciÃ³n simbÃ³lica) */ 
+        .calibrate-btn {
+            margin-top: 20px; background: rgba(255, 215, 140, 0.2); border: 1px 
+            solid rgba(255, 235, 170, 0.7); color: #FFF0C0; font-size: 0.85rem; 
+            padding: 8px 20px; border-radius: 40px; backdrop-filter: blur(8px); 
+            cursor: pointer; transition: all 0.2s; font-weight: 600; 
+            letter-spacing: 1px;
+        }
+        .calibrate-btn:active { transform: scale(0.96); background: rgba(255, 200, 
+            100, 0.4);
+        }
+        footer { margin-top: 24px; font-size: 0.65rem; text-align: center; color: 
+            #B8CFB0;
+            opacity: 0.7;
+        }
+        /* AnimaciÃ³n sutil de pulse para el canvas cuando estÃ¡ activo */ 
+        @keyframes softPulse {
+            0% { filter: drop-shadow(0 0 2px rgba(255,215,0,0.3));} 100% { filter: 
+            drop-shadow(0 0 8px rgba(255,215,0,0.6));}
+        }
+        .compass-container.active canvas { animation: softPulse 1.2s infinite 
+            alternate;
+        }
+    </style> </head> <body> <div> <div class="compass-card"> <div 
+        class="compass-container" id="compassWrapper">
+            <canvas id="compassCanvas" width="500" height="500"></canvas> </div> 
+        <div class="info-panel">
+            <div class="direction-name" id="directionText">NORTE</div> <div 
+            class="azimuth-value" id="azimuthText">0.0Â°</div> <div 
+            class="status-msg" id="statusMsg">âš¡ Esperando sensor...</div>
+        </div> <div style="display: flex; justify-content: center;"> <button 
+            class="calibrate-btn" id="calibrateBtn">ðŸ§­ CALIBRAR / 
+            REINICIAR</button>
+        </div> <footer>BrÃºjula magnÃ©tica Â· apunta al norte real</footer> </div> 
+</div> <script>
+    (function(){
+        // ---------- Elementos DOM ----------
+        const canvas = document.getElementById('compassCanvas'); const ctx = 
+        canvas.getContext('2d'); const directionSpan = 
+        document.getElementById('directionText'); const azimuthSpan = 
+        document.getElementById('azimuthText'); const statusMsgDiv = 
+        document.getElementById('statusMsg'); const wrapper = 
+        document.getElementById('compassWrapper');
+        // Variables de estado
+        let currentHeading = 0; // Ã¡ngulo en grados (0 = norte) let 
+        isDeviceOrientationSupported = false; let isAbsolute = false; // si la 
+        lectura es absoluta (magnetÃ³metro) let permissionGranted = false; // para 
+        iOS 13+ (solicitar permiso) let requestPermissionInProgress = false; let 
+        animationFrameId = null;
+        
+        // TamaÃ±o del canvas responsive
+        let canvasSize = 0;
+        
+        // ---------- Funciones auxiliares de orientaciÃ³n (grados) ----------
+        function getCardinalDirection(degrees) {
+            // 16 direcciones principales con estÃ©tica bonita
+            const directions = [ "NORTE", "NNE", "NORESTE", "ENE", "ESTE", "ESE", 
+                "SURESTE", "SSE", "SUR", "SSO", "SUROESTE", "OSO", "OESTE", "ONO", 
+                "NOROESTE", "NNO"
+            ]; const step = 22.5; let index = Math.round(((degrees + 11.25) % 360) 
+            / step) % 16; return directions[index];
+        }
+        
+        // Actualizar textos de interfaz
+        function updateUI(headingDeg) { let normalized = (headingDeg + 360) % 360; 
+            let cardinal = getCardinalDirection(normalized); 
+            directionSpan.innerText = cardinal; azimuthSpan.innerText = 
+            normalized.toFixed(1) + "Â°";
+        }
+        
+        // ---------- Dibujo de la brÃºjula ARTESANAL Y BONITA ----------
+        function drawCompass(headingDeg) { if (!ctx) return; const size = 
+            canvasSize; if (size === 0) return;
+            
+            // Ajustar resoluciÃ³n del canvas al tamaÃ±o real (retina friendly)
+            canvas.width = size; canvas.height = size;
+            
+            const centerX = size / 2; const centerY = size / 2; const radius = 
+            size * 0.45; // margen para decoraciÃ³n exterior
+            
+            ctx.clearRect(0, 0, size, size);
+            
+            // --- Fondo circular con degradado metÃ¡lico/brillante ---
+            const grad = ctx.createLinearGradient(0, 0, size, size); 
+            grad.addColorStop(0, '#F9F3E0'); grad.addColorStop(0.5, '#EBE0C5'); 
+            grad.addColorStop(1, '#D8CAA8'); ctx.beginPath(); ctx.arc(centerX, 
+            centerY, radius + 4, 0, 2 * Math.PI); ctx.fillStyle = grad; 
+            ctx.fill(); ctx.shadowBlur = 0; ctx.strokeStyle = '#BFAA7A'; 
+            ctx.lineWidth = 2; ctx.stroke();
+            
+            // Anillo exterior decorativo (puntos cardinales pequeÃ±os)
+            ctx.beginPath(); ctx.arc(centerX, centerY, radius + 2, 0, 2 * 
+            Math.PI); ctx.strokeStyle = '#C4A86B'; ctx.lineWidth = 1.8; 
+            ctx.stroke();
+            
+            // --- Escala circular (graduaciÃ³n 0Â° a 360Â°, invertir por la 
+            // rotaciÃ³n) --- Pero la brÃºjula debe girar, asÃ­ que primero 
+            // guardamos y rotamos el contexto
+            ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(-headingDeg * 
+            Math.PI / 180); // RotaciÃ³n inversa para que la aguja fija apunte al 
+            norte
+            // Dibujamos anillos graduados y marcas de direcciÃ³n
+            
+            // CÃ­rculo principal interno
+            ctx.beginPath(); ctx.arc(0, 0, radius-6, 0, 2 * Math.PI); 
+            ctx.fillStyle = '#FEF7E6'; ctx.fill(); ctx.strokeStyle = '#C2A15B'; 
+            ctx.lineWidth = 1.2; ctx.stroke();
+            
+            // Dibujar marcas de grados y nÃºmeros (cada 30 grados)
+            const markRadius = radius - 12; const textRadius = radius - 28; for 
+            (let ang = 0; ang < 360; ang += 10) {
+                let rad = ang * Math.PI / 180; let x1 = Math.sin(rad) * 
+                (markRadius - (ang % 30 === 0 ? 8 : 3)); let y1 = -Math.cos(rad) * 
+                (markRadius - (ang % 30 === 0 ? 8 : 3)); let x2 = Math.sin(rad) * 
+                markRadius; let y2 = -Math.cos(rad) * markRadius; ctx.beginPath(); 
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineWidth = (ang % 30 
+                === 0) ? 2.2 : 1; ctx.strokeStyle = (ang % 90 === 0) ? '#846C3E' : 
+                '#A58E58'; ctx.stroke();
+            }
+            
+            // Dibujar nÃºmeros cardinales (N, E, S, O) y principales
+            ctx.font = `bold ${Math.floor(size * 0.065)}px "Segoe UI", "Poppins"`; 
+            ctx.fillStyle = '#4A3724'; ctx.shadowBlur = 0; const cardinalPoints = 
+            [
+                { angle: 0, label: "N" }, { angle: 90, label: "E" }, { angle: 180, 
+                label: "S" }, { angle: 270, label: "O" }
+            ]; for (let cp of cardinalPoints) { let rad = cp.angle * Math.PI / 
+                180; let x = Math.sin(rad) * textRadius; let y = -Math.cos(rad) * 
+                textRadius; ctx.fillStyle = (cp.label === "N") ? "#D6402B" : 
+                "#3C2E22"; ctx.font = `bold ${Math.floor(size * 0.078)}px "Segoe 
+                UI", "Poppins"`; ctx.shadowBlur = 2; ctx.shadowColor = 
+                "rgba(0,0,0,0.2)"; ctx.fillText(cp.label, x - 12, y + 8); 
+                ctx.fillStyle = "#5F4C30"; ctx.font = `${Math.floor(size * 
+                0.045)}px "Segoe UI"`; if (cp.label === "N") {
+                    ctx.fillStyle = "#C7361E";
+                }
+            }
+            
+            // Agregar marcas intermedias (NE, SE, SO, NO)
+            ctx.font = `${Math.floor(size * 0.05)}px "Segoe UI"`; ctx.fillStyle = 
+            '#5E4C31'; const intercardinal = [
+                { angle: 45, label: "NE" }, { angle: 135, label: "SE" }, { angle: 
+                225, label: "SO" }, { angle: 315, label: "NO" }
+            ]; for (let ic of intercardinal) { let rad = ic.angle * Math.PI / 180; 
+                let x = Math.sin(rad) * (textRadius - 5); let y = -Math.cos(rad) * 
+                (textRadius - 5); ctx.fillStyle = '#4C3A28'; 
+                ctx.fillText(ic.label, x - 8, y + 5);
+            }
+            
+            // Restaurar rotaciÃ³n para la aguja fija ahora (no rotamos la aguja, 
+            // la aguja estÃ¡ fija al norte)
+            ctx.restore();
+            
+            // --- Aguja magnÃ©tica fija (NORTE en rojo, SUR en gris) ---
+            ctx.save(); ctx.translate(centerX, centerY);
+            // La aguja se dibuja sin rotaciÃ³n adicional porque el canvas ya 
+            // rotÃ³ previamente para los nÃºmeros. Pero la lÃ³gica correcta: el 
+            // fondo girÃ³ con heading, la aguja debe quedar alineada con el norte 
+            // real (posiciÃ³n fija apuntando arriba) En nuestro dibujo hemos 
+            // rotado todo el sistema de marcas, entonces la aguja la pintamos 
+            // fija apuntando arriba 0Â° (Norte) Pero para simular una brÃºjula 
+            // real, la aguja debe seÃ±alar el norte magnÃ©tico en relaciÃ³n al 
+            // usuario. CORRECCIÃ“N: al rotar las marcas con -heading, el norte 
+            // del mapa se alinea con la direcciÃ³n del dispositivo. La aguja debe 
+            // apuntar hacia arriba (sentido del norte real del mapa) -> entonces 
+            // dibujamos aguja roja fija hacia arriba. Excelente, esto es 
+            // consistente.
+            
+            // Aguja NORTE (roja)
+            ctx.beginPath(); ctx.moveTo(0, -radius + 20); ctx.lineTo(-12, -18); 
+            ctx.lineTo(-6, -18); ctx.lineTo(-6, radius - 36); ctx.lineTo(6, radius 
+            - 36); ctx.lineTo(6, -18); ctx.lineTo(12, -18); ctx.fillStyle = 
+            '#E34234'; ctx.shadowBlur = 4; ctx.fill(); ctx.fillStyle = '#B22222'; 
+            ctx.beginPath(); ctx.moveTo(0, -radius + 18); ctx.lineTo(-6, -12); 
+            ctx.lineTo(6, -12); ctx.fill();
+            
+            // Aguja SUR (blanco/gris)
+            ctx.beginPath(); ctx.moveTo(0, radius - 28); ctx.lineTo(-8, 15); 
+            ctx.lineTo(-4, 15); ctx.lineTo(-4, 22); ctx.lineTo(4, 22); 
+            ctx.lineTo(4, 15); ctx.lineTo(8, 15); ctx.fillStyle = '#C0C0C0'; 
+            ctx.fill(); ctx.fillStyle = '#A0A0A0'; ctx.beginPath(); ctx.moveTo(0, 
+            radius - 26); ctx.lineTo(-4, 12); ctx.lineTo(4, 12); ctx.fill();
+            
+            // Centro decorativo (tornillo)
+            ctx.beginPath(); ctx.arc(0, 0, 12, 0, 2 * Math.PI); ctx.fillStyle = 
+            '#DFC98A'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 7, 0, 2 * 
+            Math.PI); ctx.fillStyle = '#B88B4A'; ctx.fill(); ctx.beginPath(); 
+            ctx.arc(0, 0, 3, 0, 2 * Math.PI); ctx.fillStyle = '#F5DEB3'; 
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Borde final decorativo tipo joya
+            ctx.beginPath(); ctx.arc(centerX, centerY, radius + 4, 0, 2 * 
+            Math.PI); ctx.lineWidth = 1.5; ctx.strokeStyle = '#FCE1A8'; 
+            ctx.stroke();
+        }
+        
+        // FunciÃ³n para redimensionar y redibujar
+        function resizeAndDraw() { const container = 
+            document.querySelector('.compass-container'); const containerRect = 
+            container.getBoundingClientRect(); canvasSize = 
+            Math.min(containerRect.width, containerRect.height); 
+            canvas.style.width = `${canvasSize}px`; canvas.style.height = 
+            `${canvasSize}px`; canvas.width = canvasSize; canvas.height = 
+            canvasSize; drawCompass(currentHeading);
+        }
+        
+        // Manejar eventos de orientaciÃ³n (deviceorientation absoluto)
+        function handleOrientation(event) { if (!isDeviceOrientationSupported) 
+            return;
+            // Verificar heading (alpha + webkitCompassHeading)
+            let heading = null; if (event.webkitCompassHeading !== undefined) {
+                // iOS y Safari: Ã¡ngulo del norte magnÃ©tico (0-360)
+                heading = event.webkitCompassHeading; isAbsolute = true;
+            } else if (event.alpha !== null && event.alpha !== undefined) {
+                // Alpha: rotaciÃ³n alrededor del eje Z (0 = norte) Si 
+                // event.absolute es true, alpha es relativo al norte magnÃ©tico
+                if (event.absolute === true) { heading = event.alpha;
+                } else {
+                    // En algunos dispositivos, la ausencia de magnetÃ³metro da 
+                    // alpha no absoluto, pero puede funcionar
+                    heading = event.alpha;
+                }
+            }
+            
+            if (heading !== null && !isNaN(heading)) { currentHeading = heading % 
+                360; updateUI(currentHeading); drawCompass(currentHeading); if 
+                (statusMsgDiv.innerText.includes("Esperando") || 
+                statusMsgDiv.innerText.includes("permiso")) {
+                    statusMsgDiv.innerHTML = "ðŸ§­ BrÃºjula activa Â· leyendo 
+                    orientaciÃ³n"; wrapper.classList.add("active");
+                }
+            } else {
+                statusMsgDiv.innerHTML = "âš ï¸ Datos de orientaciÃ³n no 
+                disponibles";
+            }
+        }
+        
+        // Solicitud para iOS 13+ (permiso)
+        function requestIOSPermission() { if (typeof DeviceOrientationEvent !== 
+            'undefined' && typeof DeviceOrientationEvent.requestPermission === 
+            'function') {
+                if (requestPermissionInProgress) return; 
+                requestPermissionInProgress = true; statusMsgDiv.innerHTML = "ðŸ”„ 
+                Toca para habilitar brÃºjula";
+                // Mostrar modal de interacciÃ³n del usuario (el botÃ³n lo harÃ¡)
+                return true;
+            } else {
+                // Android y otros: ya tenemos permiso implÃ­cito
+                startOrientationListener(); return false;
+            }
+        }
+        
+        function startOrientationListener() { if (isDeviceOrientationSupported) 
+            return; window.addEventListener('deviceorientation', 
+            handleOrientation); isDeviceOrientationSupported = true; 
+            statusMsgDiv.innerHTML = "ðŸŒ BrÃºjula activa Â· esperando 
+            seÃ±al...";
+        }
+        
+        // InicializaciÃ³n completa
+        function initCompass() { resizeAndDraw(); 
+            window.addEventListener('resize', () => {
+                resizeAndDraw();
+            });
+            
+            // Detectar compatibilidad
+            if (window.DeviceOrientationEvent) { if (typeof 
+                DeviceOrientationEvent.requestPermission === 'function') {
+                    // iOS: mostramos botÃ³n de solicitud de permiso real
+                    statusMsgDiv.innerHTML = "ðŸ“± iOS detectado Â· toque CALIBRAR 
+                    para activar brÃºjula"; wrapper.classList.remove("active");
+                } else {
+                    startOrientationListener();
+                }
+            } else {
+                statusMsgDiv.innerHTML = "âŒ Tu navegador no soporta 
+                orientaciÃ³n"; directionSpan.innerText = "SENSOR"; 
+                azimuthSpan.innerText = "--Â°";
+            }
+        }
+        
+        // BotÃ³n de calibraciÃ³n / solicitud de permiso (iOS)
+        const calibrateBtn = document.getElementById('calibrateBtn'); async 
+        function handleCalibrateOrRequest() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof 
+            DeviceOrientationEvent.requestPermission === 'function') {
+                try { const permissionState = await 
+                    DeviceOrientationEvent.requestPermission(); if 
+                    (permissionState === 'granted') {
+                        window.addEventListener('deviceorientation', 
+                        handleOrientation); isDeviceOrientationSupported = true; 
+                        statusMsgDiv.innerHTML = "âœ¨ Permiso concedido Â· 
+                        brÃºjula lista"; wrapper.classList.add("active");
+                        // Inmediatamente ver si hay heading inicial
+                        setTimeout(() => { if (currentHeading === 0 && 
+                            !window.lastHeadingReceived) {
+                                statusMsgDiv.innerHTML = "ðŸ”„ Esperando datos 
+                                magnÃ©ticos...";
+                            }
+                        }, 300);
+                    } else {
+                        statusMsgDiv.innerHTML = "ðŸ”’ Permiso denegado, no se 
+                        puede acceder a la brÃºjula";
+                    }
+                } catch (err) {
+                    statusMsgDiv.innerHTML = "âš ï¸ Error al solicitar permiso"; 
+                    console.warn(err);
+                }
+            } else {
+                // En Android o PC solo reiniciamos visualmente, o forzamos 
+                // re-solicitud?
+                if (!isDeviceOrientationSupported) { startOrientationListener();
+                } else {
+                    // simulamos efecto de recalibraciÃ³n visual
+                    statusMsgDiv.innerHTML = "ðŸŒ€ Recalibrando... mueve el 
+                    dispositivo en 8"; drawCompass(currentHeading); setTimeout(() 
+                    => {
+                        statusMsgDiv.innerHTML = "ðŸ§­ BrÃºjula estable";
+                    }, 1000);
+                }
+            }
+        }
+        
+        calibrateBtn.addEventListener('click', (e) => { e.preventDefault(); 
+            handleCalibrateOrRequest();
+        });
+        
+        // Fallback para asegurar que el canvas se dibuje periÃ³dicamente incluso 
+        // sin sensor
+        function fallbackAnimation() { if (!isDeviceOrientationSupported && 
+            currentHeading === 0) {
+                // Si no hay movimiento, mostrar al menos la brÃºjula estÃ¡tica 
+                // sin movimiento
+                drawCompass(0); updateUI(0);
+            } else {
+                drawCompass(currentHeading);
+            }
+            requestAnimationFrame(fallbackAnimation);
+        }
+        
+        // Iniciar todo
+        initCompass();
+        // Aseguramos animaciÃ³n continua y responsive
+        let resizeObserver = new ResizeObserver(() => resizeAndDraw()); 
+        resizeObserver.observe(document.querySelector('.compass-container')); 
+        fallbackAnimation();
+        
+        // Si el usuario sale de la pestaÃ±a no hay problema, pero se reanuda
+        window.addEventListener('load', () => { resizeAndDraw();
+        });
+    })();
+</script> </body>
+</html>
