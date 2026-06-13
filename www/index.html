@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Brújula Celestial</title>
+    <script src="capacitor.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { transition: background 0.3s ease; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: monospace; padding: 16px; background: #030812; }
@@ -518,20 +519,47 @@
         setInterval(() => drawCompass(), 30000);
     })();
 </script>
-<script src="capacitor.js"></script> <!-- Capacitor lo inyectará solo -->
+<!-- Asegúrate de que esta línea esté en tu <head> o inicio del <body> -->
+<script src="capacitor.js"></script>
+
 <script>
-  document.addEventListener('deviceready', async () => {
-    const { AdMob } = capacitorExports.Plugins; // Así accedes al plugin en JS puro
+  // Función para arrancar AdMob
+  async function iniciarPublicidad() {
+    try {
+      // Usamos la variable global de Capacitor
+      const { AdMob } = Capacitor.Plugins;
 
-    await AdMob.initialize();
+      await AdMob.initialize({
+        requestTrackingAuthorization: true, // Importante para iOS/Android moderno
+      });
 
-    // Mostrar banner de prueba (luego pones el tuyo)
-    await AdMob.showBanner({
-      adId: 'ca-app-pub-3940256099942544/6300978111', 
-      position: 'BOTTOM_CENTER',
-      margin: 0
+      // Mostrar Banner
+      await AdMob.showBanner({
+        adId: 'ca-app-pub-3940256099942544/6300978111', // ID DE PRUEBA
+        position: 'BOTTOM_CENTER',
+        margin: 0,
+        isTesting: true // Siempre true mientras estemos probando
+      });
+      
+      console.log("AdMob Inicializado");
+    } catch (e) {
+      console.error("Error en AdMob: ", e);
+    }
+  }
+
+  // Esperar a que la App esté lista
+  window.onload = () => {
+    document.addEventListener('deviceready', () => {
+      iniciarPublicidad();
+      
+      // Aquí también puedes pedir permiso de GPS si lo usas con navigator.geolocation
+      navigator.geolocation.getCurrentPosition(() => {
+        console.log("GPS Permitido");
+      }, (err) => {
+        console.error("Error GPS: ", err);
+      });
     });
-  });
+  };
 </script>
 </body>
 </html>
