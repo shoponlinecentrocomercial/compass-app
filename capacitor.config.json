@@ -1,0 +1,6 @@
+{
+  "appId": "com.symphoniertech.brujula",
+  "appName": "Brujula Celestial",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
