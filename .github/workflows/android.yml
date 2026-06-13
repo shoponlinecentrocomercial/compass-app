@@ -29,19 +29,26 @@ jobs:
       - name: Capacitor Sync
         run: |
           npx cap add android || true
+          # Copia tu index.html a www si está en la raíz
+          cp index.html www/ 2>/dev/null || true 
           npx cap sync android
 
-      # --- PASO CRUCIAL PARA REPARAR EL ERROR DE ZIPALIGN ---
-      - name: Fix Zipalign Path
+      # --- EL HACK DEFINITIVO PARA ZIPALIGN ---
+      - name: Force Fix Android Build Tools Path
         run: |
-          # Buscar la carpeta de build-tools instalada (ej. 34.0.0) y añadirla al PATH
-          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
-          echo "$BUILD_TOOLS_DIR" >> $GITHUB_PATH
-          echo "Usando build-tools en: $BUILD_TOOLS_DIR"
+          # Detectamos la versión real que tiene GitHub (ej: 34.0.0 o 35.0.0)
+          ACTUAL_VERSION=$(ls $ANDROID_HOME/build-tools/ | tail -n 1)
+          echo "La versión real es $ACTUAL_VERSION"
+          # Creamos la ruta que la acción busca por error
+          sudo mkdir -p /usr/local/lib/android/sdk/build-tools/29.0.3
+          # Enlazamos los archivos necesarios de la versión real a la carpeta 29.0.3
+          sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/zipalign /usr/local/lib/android/sdk/build-tools/29.0.3/zipalign
+          sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/lib /usr/local/lib/android/sdk/build-tools/29.0.3/lib
+          sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/apksigner /usr/local/lib/android/sdk/build-tools/29.0.3/apksigner
 
       - name: Add AdMob ID to Manifest
         run: |
-          # Reemplaza con tu ID real de AdMob en el futuro
+          # ID de prueba de Google. Cámbialo por el tuyo (el que tiene ~)
           sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"\/>' android/app/src/main/AndroidManifest.xml
 
       - name: Build with Gradle
