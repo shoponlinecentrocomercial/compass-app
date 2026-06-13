@@ -6,36 +6,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { java-version: '17', distribution: 'temurin' }
-      - uses: actions/setup-node@v4
-        with: { node-version: 18 }
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Install Dependencies
-        run: npm install
-
-      - name: Init Android
         run: |
-          npx cap add android
+          npm install
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/admob
+
+      - name: Create www folder if not exists
+        run: mkdir -p www
+
+      - name: Capacitor Sync
+        run: |
+          npx cap add android || true
           npx cap sync android
 
-      - name: Build App
+      - name: Build with Gradle
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
 
       - name: Sign APK
-        id: sign_app
+        id: sign_app  # <--- Este es el ID importante
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: android/app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
           alias: mi-alias
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: ${{ codesign.outputs.signedReleaseFile }}
+          # Aquí usamos el ID 'sign_app' que definimos arriba
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
