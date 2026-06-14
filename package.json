@@ -1,5 +1,5 @@
 {
-  "name": "com.tuempresa.brújula",
+  "name": "com.symphoniertech.compass",
   "version": "1.0.0",
   "scripts": {
     "build": "echo 'No build system needed'"
