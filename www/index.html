@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Brújula Celestial</title>
+    <title>Celestial Compass</title>
     <script src="capacitor.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -39,32 +39,32 @@
             <div class="direction-name" id="directionText">---</div>
             <div class="azimuth-value" id="azimuthText">---</div>
             <div class="astro-info" id="astroInfo">⭐ -- | 📍 --</div>
-            <div><span class="status-msg" id="statusMsg">🎯 Iniciando...</span></div>
+            <div><span class="status-msg" id="statusMsg">🎯 Starting...</span></div>
         </div>
 
         <div class="mode-selector" style="display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
             <button id="modeAuto" class="mode-btn active-mode">🌓 Auto</button>
-            <button id="modeDay" class="mode-btn">☀️ Día</button>
-            <button id="modeNight" class="mode-btn">🌙 Noche</button>
+            <button id="modeDay" class="mode-btn">☀️ Day</button>
+            <button id="modeNight" class="mode-btn">🌙 Night</button>
         </div>
 
         <div class="layers-panel">
-            <div class="layers-title">🎛️ CAPAS VISUALES</div>
+            <div class="layers-title">🎛️ VISUAL LAYERS </div>
             <div class="toggle-group">
-                <button id="toggleStars" class="toggle-btn">⭐ Estrellas ON</button>
-                <button id="toggleConstellations" class="toggle-btn">🔗 Constelaciones ON</button>
-                <button id="togglePlanets" class="toggle-btn">🪐 Planetas ON</button>
-                <button id="toggleLabels" class="toggle-btn">🏷️ Nombres ON</button>
-                <button id="toggleSunMoon" class="toggle-btn">☀️🌙 Sol/Luna ON</button>
+                <button id="toggleStars" class="toggle-btn">⭐ Stars ON</button>
+                <button id="toggleConstellations" class="toggle-btn">🔗 Constellations ON</button>
+                <button id="togglePlanets" class="toggle-btn">🪐 Planets ON</button>
+                <button id="toggleLabels" class="toggle-btn">🏷️ Names ON</button>
+                <button id="toggleSunMoon" class="toggle-btn">☀️🌙 Sun/Moon ON</button>
             </div>
         </div>
 
         <div class="button-row">
-            <button id="activateBtn">🧭 ACTIVAR</button>
+            <button id="activateBtn">🧭 ACTIVATE</button>
             <button id="gpsBtn">📍 GPS</button>
             <button id="debugBtn">🔍 DEBUG</button>
         </div>
-        <footer>★ Personaliza tu cielo | Orientación astronómica ★</footer>
+        <footer>★ Personalize your sky | Astronomical orientation ★</footer>
     </div>
 </div>
 
@@ -113,11 +113,11 @@
         }
         
         const stars = [
-            { name: "Sirio", ra: 6.75, dec: -16.72, mag: -1.46, color: "#FFFDE0" },
+            { name: "Sirius", ra: 6.75, dec: -16.72, mag: -1.46, color: "#FFFDE0" },
             { name: "Canopus", ra: 6.40, dec: -52.70, mag: -0.72, color: "#FFF5CC" },
-            { name: "Arturo", ra: 14.27, dec: 19.18, mag: -0.05, color: "#FFDEA0" },
+            { name: "Arthur", ra: 14.27, dec: 19.18, mag: -0.05, color: "#FFDEA0" },
             { name: "Vega", ra: 18.62, dec: 38.78, mag: 0.03, color: "#FFFFFF" },
-            { name: "Capella", ra: 5.27, dec: 45.99, mag: 0.08, color: "#FFEECC" },
+            { name: "Chapel", ra: 5.27, dec: 45.99, mag: 0.08, color: "#FFEECC" },
             { name: "Rigel", ra: 5.24, dec: -8.20, mag: 0.13, color: "#FFFFFF" },
             { name: "Procyon", ra: 7.65, dec: 5.22, mag: 0.34, color: "#FFF5E0" },
             { name: "Betelgeuse", ra: 5.92, dec: 7.41, mag: 0.42, color: "#FFCCAA" },
@@ -132,14 +132,14 @@
         
         const planets = [
             { name: "Venus", ra: 5.1, dec: 22.5, mag: -4.2, color: "#FFF5CC", tam: 10 },
-            { name: "Marte", ra: 8.3, dec: 19.8, mag: -0.5, color: "#E6735C", tam: 9 },
-            { name: "Júpiter", ra: 16.2, dec: -20.1, mag: -2.3, color: "#C9A87C", tam: 11 },
-            { name: "Saturno", ra: 19.4, dec: -22.0, mag: 0.5, color: "#E8CFA0", tam: 10 }
+            { name: "Mars", ra: 8.3, dec: 19.8, mag: -0.5, color: "#E6735C", tam: 9 },
+            { name: "Jupiter", ra: 16.2, dec: -20.1, mag: -2.3, color: "#C9A87C", tam: 11 },
+            { name: "Saturn", ra: 19.4, dec: -22.0, mag: 0.5, color: "#E8CFA0", tam: 10 }
         ];
         
         const constellations = [
-            { from: "Sirio", to: "Rigel" }, { from: "Rigel", to: "Betelgeuse" },
-            { from: "Betelgeuse", to: "Procyon" }, { from: "Arturo", to: "Spica" },
+            { from: "Sirius", to: "Rigel" }, { from: "Rigel", to: "Betelgeuse" },
+            { from: "Betelgeuse", to: "Procyon" }, { from: "Arthur", to: "Spica" },
             { from: "Vega", to: "Deneb" }, { from: "Aldebaran", to: "Betelgeuse" },
             { from: "Dubhe", to: "Merak" }, { from: "Merak", to: "Phecda" },
             { from: "Phecda", to: "Megrez" }, { from: "Megrez", to: "Alioth" },
@@ -221,13 +221,13 @@
             const now=new Date();
             const dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
             const phase = (dayOfYear % 29.53) / 29.53;
-            if(phase < 0.1) return "🌑 Nueva";
-            if(phase < 0.25) return "🌒 Creciente";
-            if(phase < 0.4) return "🌓 Cuarto creciente";
-            if(phase < 0.6) return "🌔 Gibosa creciente";
-            if(phase < 0.75) return "🌕 Llena";
-            if(phase < 0.9) return "🌖 Gibosa menguante";
-            return "🌘 Menguante";
+            if(phase < 0.1) return "🌑 New";
+            if(phase < 0.25) return "🌒 Crescend";
+            if(phase < 0.4) return "🌓 Waxing Crescent";
+            if(phase < 0.6) return "🌔 Gibbous Crescent";
+            if(phase < 0.75) return "🌕 Full";
+            if(phase < 0.9) return "🌖 Gibouss Waning";
+            return "🌘 Waning";
         }
         
         function getSunMoon() {
@@ -305,7 +305,7 @@
             if(isNight) {
                 drawStarsAndPlanets(cx, cy, radius, currentHeading);
             } else {
-                astroInfo.innerHTML = `☀️ Sol: ${Math.round(sunAz)}° | 🌙 Luna: ${Math.round(moonAz)}° | 📍 ${latitude.toFixed(1)}°,${longitude.toFixed(1)}°`;
+                astroInfo.innerHTML = `☀️ Sun: ${Math.round(sunAz)}° | 🌙 Moon: ${Math.round(moonAz)}° | 📍 ${latitude.toFixed(1)}°,${longitude.toFixed(1)}°`;
             }
             
             ctx.save();
@@ -406,7 +406,7 @@
             let heading = e.webkitCompassHeading || e.alpha;
             if(heading !== null && !isNaN(heading)) {
                 currentHeading = (360 - heading) % 360;
-                let dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+                let dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
                 directionSpan.innerText = dirs[Math.round(((currentHeading+11.25)%360)/22.5)%16];
                 azimuthSpan.innerText = currentHeading.toFixed(1)+"°";
                 drawCompass();
@@ -429,7 +429,7 @@
                     }
                 );
             } else {
-                statusMsgDiv.innerHTML = "❌ GPS no soportado";
+                statusMsgDiv.innerHTML = "❌ GPS not supported";
             }
         }
         
@@ -447,7 +447,7 @@
             if(mode === 'day') document.getElementById('modeDay').classList.add('active-mode');
             if(mode === 'night') document.getElementById('modeNight').classList.add('active-mode');
             drawCompass();
-            statusMsgDiv.innerHTML = `🎨 Modo visual: ${mode.toUpperCase()}`;
+            statusMsgDiv.innerHTML = `🎨 Visual Mode: ${mode.toUpperCase()}`;
         }
         
         function toggleLayer(layer) {
@@ -455,27 +455,27 @@
             saveLayers();
             updateLayerButtons();
             drawCompass();
-            statusMsgDiv.innerHTML = `🔄 ${layer}: ${layers[layer] ? "activada" : "desactivada"}`;
+            statusMsgDiv.innerHTML = `🔄 ${layer}: ${layers[layer] ? "activated" : "deactivated"}`;
         }
         
         function activateCompass() {
-            statusMsgDiv.innerHTML = "🔄 Activando...";
+            statusMsgDiv.innerHTML = "🔄 Activating...";
             if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
                 DeviceOrientationEvent.requestPermission()
                     .then(perm => {
                         if(perm === 'granted') {
                             window.addEventListener('deviceorientation', handleOrientation);
                             isActive = true;
-                            statusMsgDiv.innerHTML = "✅ Activo";
+                            statusMsgDiv.innerHTML = "✅ Active";
                         } else {
-                            statusMsgDiv.innerHTML = "❌ Permiso denegado";
+                            statusMsgDiv.innerHTML = "❌ Permission Denied";
                         }
                     })
-                    .catch(() => statusMsgDiv.innerHTML = "⚠️ Error permiso");
+                    .catch(() => statusMsgDiv.innerHTML = "⚠️ Permission Error");
             } else {
                 window.addEventListener('deviceorientation', handleOrientation);
                 isActive = true;
-                statusMsgDiv.innerHTML = "✅ Activo";
+                statusMsgDiv.innerHTML = "✅ Active";
             }
             getLocation();
         }
