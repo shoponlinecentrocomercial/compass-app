@@ -1,7 +1,7 @@
 {
-  "name": "Brújula Celestial",
-  "short_name": "Brújula",
-  "description": "Brújula digital elegante",
+  "name": "Celestial Compass",
+  "short_name": "Compass",
+  "description": "Compass with solar, lunar, planetary, stellar and constellation reference",
   "start_url": "/index.html",
   "display": "standalone",
   "theme_color": "#1a3c2c",
