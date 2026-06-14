@@ -1,6 +1,6 @@
 {
-  "appId": "com.symphoniertech.brujula",
-  "appName": "Brujula Celestial",
+  "appId": "com.symphoniertech.compass",
+  "appName": "Celestial Compass",
   "webDir": "www",
   "bundledWebRuntime": false
 }
