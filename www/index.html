@@ -436,8 +436,12 @@
         function debugInfo() {
             let starsV = getVisibleStars();
             let planetsV = getVisiblePlanets();
+            let infoPlanets = '';
+            for (pl=0;pl<planetsV.length;pl++) {
+                infoPlanets=infoPlanets+'\n'+pl[0]+':';
+            }
             let { sunAz, moonAz } = getSunMoon();
-            alert(`Estrellas: ${starsV.length}\nPlanetas: ${planetsV.length}\nSol: ${Math.round(sunAz)}°\nLuna: ${Math.round(moonAz)}°\nGPS: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}\nRumbo: ${currentHeading.toFixed(0)}°\nModo: ${visualMode}`);
+            alert(`Stars: ${starsV.length}\nPlanets: ${planetsV.length}\nSun: ${Math.round(sunAz)}°\nMoon: ${Math.round(moonAz)}°\nGPS: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}\nCourse: ${currentHeading.toFixed(0)}°\nMode: ${visualMode}\n${infoPlanets}`);
         }
         
         function setVisualMode(mode) {
