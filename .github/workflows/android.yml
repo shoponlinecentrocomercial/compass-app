@@ -21,7 +21,8 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/admob
+          # Instalamos la herramienta de assets globalmente en la máquina virtual para evitar fallos
+          npm install -g @capacitor/assets
 
       - name: Create www folder
         run: mkdir -p www
@@ -29,42 +30,34 @@ jobs:
       - name: Capacitor Sync
         run: |
           npx cap add android || true
-          # Copia tu index.html a www si está en la raíz
           cp index.html www/ 2>/dev/null || true 
           npx cap sync android
 
-      # --- ESTE ES EL PASO NUEVO PARA EL LOGO ---
-      - name: Generate Resources (Icons & Splash)
+      # --- PASO REVISADO PARA EL LOGO ---
+      - name: Generate Resources
         run: |
-          # Esto busca en la carpeta /assets y crea los iconos en la carpeta /android
-          npx capacitor-assets generate --android
+          # Forzamos a la herramienta a buscar en la carpeta assets y volcar en android
+          capacitor-assets generate --android --assetPath assets
 
-      # --- EL HACK DEFINITIVO PARA ZIPALIGN ---
       - name: Force Fix Android Build Tools Path
         run: |
-          # Detectamos la versión real que tiene GitHub (ej: 34.0.0 o 35.0.0)
           ACTUAL_VERSION=$(ls $ANDROID_HOME/build-tools/ | tail -n 1)
-          echo "La versión real es $ACTUAL_VERSION"
-          # Creamos la ruta que la acción busca por error
           sudo mkdir -p /usr/local/lib/android/sdk/build-tools/29.0.3
-          # Enlazamos los archivos necesarios de la versión real a la carpeta 29.0.3
           sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/zipalign /usr/local/lib/android/sdk/build-tools/29.0.3/zipalign
           sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/lib /usr/local/lib/android/sdk/build-tools/29.0.3/lib
           sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/apksigner /usr/local/lib/android/sdk/build-tools/29.0.3/apksigner
 
       - name: Add AdMob ID to Manifest
         run: |
-          # ID de prueba de Google. Cámbialo por el tuyo (el que tiene ~)
           sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"\/>' android/app/src/main/AndroidManifest.xml
+
       - name: Add Permissions to Manifest
         run: |
-          # Permisos de ubicación (GPS)
           sed -i '/<manifest/a <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />' android/app/src/main/AndroidManifest.xml
-          # Permiso para sensores (Brújula)
           sed -i '/<manifest/a <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a <uses-feature android:name="android.hardware.sensor.compass" android:required="true" />' android/app/src/main/AndroidManifest.xml
-          
+
       - name: Build with Gradle
         run: |
           cd android
