@@ -36,8 +36,10 @@ jobs:
       # --- PASO REVISADO PARA EL LOGO ---
       - name: Generate Resources
         run: |
-          # Forzamos a la herramienta a buscar en la carpeta assets y volcar en android
-          capacitor-assets generate --android --assetPath assets
+          # Instalamos la última versión de la herramienta
+          npm install @capacitor/assets
+          # Ejecutamos forzando la ruta del icono y diciéndole que solo queremos Android
+          npx @capacitor/assets generate --android --iconPath assets/icon.png
 
       - name: Force Fix Android Build Tools Path
         run: |
