@@ -21,27 +21,23 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          # Instalamos la herramienta de assets globalmente en la máquina virtual para evitar fallos
-          npm install -g @capacitor/assets
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor-community/admob @capacitor/assets
 
       - name: Create www folder
-        run: mkdir -p www
+        run: mkdir -p www && cp index.html www/ 2>/dev/null || true
 
-      - name: Capacitor Sync
+      - name: Initialize Capacitor Android
         run: |
-          npx cap add android || true
-          cp index.html www/ 2>/dev/null || true 
+          # Añadimos la plataforma Android desde cero
+          npx cap add android
           npx cap sync android
 
-      # --- PASO REVISADO PARA EL LOGO ---
-      - name: Generate Resources
+      - name: Generate App Icons
         run: |
-          # Instalamos la última versión de la herramienta
-          npm install @capacitor/assets
-          # Ejecutamos forzando la ruta del icono y diciéndole que solo queremos Android
-          npx @capacitor/assets generate --android --iconPath assets/icon.png
+          # Esta herramienta busca automáticamente la carpeta /assets
+          npx capacitor-assets generate --android
 
-      - name: Force Fix Android Build Tools Path
+      - name: Fix Android Environment (Zipalign & Apksigner)
         run: |
           ACTUAL_VERSION=$(ls $ANDROID_HOME/build-tools/ | tail -n 1)
           sudo mkdir -p /usr/local/lib/android/sdk/build-tools/29.0.3
@@ -49,18 +45,17 @@ jobs:
           sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/lib /usr/local/lib/android/sdk/build-tools/29.0.3/lib
           sudo ln -s $ANDROID_HOME/build-tools/$ACTUAL_VERSION/apksigner /usr/local/lib/android/sdk/build-tools/29.0.3/apksigner
 
-      - name: Add AdMob ID to Manifest
+      - name: Configure Android Manifest (AdMob & Permissions)
         run: |
+          # Inyectar ID de AdMob
           sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"\/>' android/app/src/main/AndroidManifest.xml
-
-      - name: Add Permissions to Manifest
-        run: |
+          # Inyectar Permisos de GPS y Sensores
           sed -i '/<manifest/a <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a <uses-feature android:name="android.hardware.sensor.compass" android:required="true" />' android/app/src/main/AndroidManifest.xml
 
-      - name: Build with Gradle
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
@@ -76,7 +71,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
 
-      - name: Upload APK
+      - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
