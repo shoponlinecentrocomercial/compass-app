@@ -74,5 +74,5 @@ jobs:
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: stellar_compass_v1
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
