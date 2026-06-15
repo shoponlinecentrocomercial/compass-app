@@ -33,6 +33,12 @@ jobs:
           cp index.html www/ 2>/dev/null || true 
           npx cap sync android
 
+      # --- ESTE ES EL PASO NUEVO PARA EL LOGO ---
+      - name: Generate Resources (Icons & Splash)
+        run: |
+          # Esto busca en la carpeta /assets y crea los iconos en la carpeta /android
+          npx capacitor-assets generate --android
+
       # --- EL HACK DEFINITIVO PARA ZIPALIGN ---
       - name: Force Fix Android Build Tools Path
         run: |
