@@ -438,7 +438,7 @@
             let planetsV = getVisiblePlanets();
             let infoPlanets = '';
             for (pl=0;pl<planetsV.length;pl++) {
-                infoPlanets=infoPlanets+'\n'+planetsV[pl].name+' magnitude:'+planetsV[pl].magnitud+', alt:'+planetsV[pl].alt+' az:'+planetsV[pl].az;
+                infoPlanets=infoPlanets+'\n'+pl[0]+':';
             }
             let { sunAz, moonAz } = getSunMoon();
             alert(`Stars: ${starsV.length}\nPlanets: ${planetsV.length}\nSun: ${Math.round(sunAz)}°\nMoon: ${Math.round(moonAz)}°\nGPS: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}\nCourse: ${currentHeading.toFixed(0)}°\nMode: ${visualMode}\n${infoPlanets}`);
