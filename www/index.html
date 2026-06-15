@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Celestial Compass</title>
+    <title>Stellar compass</title>
     <script src="capacitor.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -105,11 +105,11 @@
         }
         
         function updateLayerButtons() {
-            document.getElementById('toggleStars').innerText = layers.stars ? "⭐ Estrellas ON" : "⭐ Estrellas OFF";
-            document.getElementById('toggleConstellations').innerText = layers.constellations ? "🔗 Constelaciones ON" : "🔗 Constelaciones OFF";
-            document.getElementById('togglePlanets').innerText = layers.planets ? "🪐 Planetas ON" : "🪐 Planetas OFF";
-            document.getElementById('toggleLabels').innerText = layers.labels ? "🏷️ Nombres ON" : "🏷️ Nombres OFF";
-            document.getElementById('toggleSunMoon').innerText = layers.sunMoon ? "☀️🌙 Sol/Luna ON" : "☀️🌙 Sol/Luna OFF";
+            document.getElementById('toggleStars').innerText = layers.stars ? "⭐ Stars ON" : "⭐ Stars OFF";
+            document.getElementById('toggleConstellations').innerText = layers.constellations ? "🔗 Constellations ON" : "🔗 Constellations OFF";
+            document.getElementById('togglePlanets').innerText = layers.planets ? "🪐 Planets ON" : "🪐 Planets OFF";
+            document.getElementById('toggleLabels').innerText = layers.labels ? "🏷️ Names ON" : "🏷️ Names OFF";
+            document.getElementById('toggleSunMoon').innerText = layers.sunMoon ? "☀️🌙 Sun/Moon ON" : "☀️🌙 Sun/Moon OFF";
         }
         
         const stars = [
@@ -329,7 +329,7 @@
             ctx.fillStyle = isNight ? "#88ccff" : "#2a5f6a";
             ctx.fillText("S", -10, radius+8);
             ctx.fillText("E", radius-18, 8);
-            ctx.fillText("O", -radius+8, 8);
+            ctx.fillText("W", -radius+8, 8);
             ctx.restore();
             
             if(layers.sunMoon) {
